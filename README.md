@@ -16,7 +16,7 @@
 
 **## 🌐 Try the Live App**
 
-▶️ [(https://code-support-ai.streamlit.app/)](https://code-support-ai.streamlit.app/)
+▶️ [https://pyplain.streamlit.app/](https://pyplain.streamlit.app/)
 
 ---
 
