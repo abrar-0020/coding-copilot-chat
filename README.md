@@ -16,7 +16,7 @@
 
 **## 🌐 Try the Live App**
 
-▶️ [https://pyplain.streamlit.app/](https://pyplain.streamlit.app/)
+▶️ [https://mini-copilot.streamlit.app/](https://mini-copilot.streamlit.app/)
 
 ---
 
