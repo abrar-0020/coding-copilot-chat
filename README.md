@@ -16,7 +16,7 @@
 
 **## 🌐 Try the Live App**
 
-▶️ [https://codestitch.streamlit.app/](https://codestitch.streamlit.app/)
+▶️ [[https://codestitch.streamlit.app/](https://code-support-ai.streamlit.app/)]
 
 ---
 
