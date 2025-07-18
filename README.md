@@ -1,6 +1,6 @@
-# 🤖 CodeStitch – AI Coding Copilot by Abrar Pasha
+# 🤖 Mini Copilot – AI Coding Copilot by Abrar Pasha
 
-**CodeStitch** is a modern, interactive coding assistant built with **Streamlit** and **Together.ai (Mistral-7B)**. Ask coding questions or upload `.py` files to get plain-English explanations, bug fixes, or improvements — all via a sleek chat interface.
+**Mini Copilot** is a modern, interactive coding assistant built with **Streamlit** and **Together.ai (Mistral-7B)**. Ask coding questions or upload `.py` files to get plain-English explanations, bug fixes, or improvements — all via a sleek chat interface.
 
 ---
 
@@ -61,9 +61,6 @@ Secrets Manager in Streamlit Cloud
 
 **🙋 Author**
 Abrar Pasha
-🧪 Internship Project @ Planto.ai
-🗓️ 2025
-
 ---
 
 **📌 Note**
