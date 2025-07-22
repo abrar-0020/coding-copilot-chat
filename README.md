@@ -66,5 +66,13 @@ Abrar Pasha
 **📌 Note**
 This tool is designed for educational and productivity use — not for generating full applications or advanced debugging. For large-scale use, consider integrating with stronger hosting or GPT-based APIs.
 
+---
+
+## ©️ License
+
+© 2025 Abrar. All rights reserved.
+
+This project is open for personal and educational use.  
+Do not resell or host as a commercial service without permission.
 
 
