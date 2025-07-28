@@ -16,22 +16,22 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 
 genai.configure(api_key=API_KEY)
 
-# ──(mini-copilot Query Functions ──
+# ── Gemini Query Functions ──
 def query_gemini_text(prompt: str) -> str:
     try:
-        model = genai.GenerativeModel("mini-copilot")
+        model = genai.GenerativeModel("gemini-2.5-pro")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"❌(mini-copilot API Error: {e}"
+        return f"❌ Gemini API Error: {e}"
 
 def query_gemini_image(image: Image.Image, prompt="Describe this image in detail.") -> str:
     try:
-        model = genai.GenerativeModel("mini-copilot")
+        model = genai.GenerativeModel("gemini-2.5-pro")
         response = model.generate_content([prompt, image])
         return response.text
     except Exception as e:
-        return f"❌(mini-copilot Image Analysis Error: {e}"
+        return f"❌ Gemini Image Analysis Error: {e}"
 
 # ── Extract Text from PDF (Normal) ──
 def extract_text_from_pdf(file_bytes):
@@ -58,7 +58,7 @@ def extract_text_with_ocr(file_bytes):
     return text
 
 # ── Streamlit Setup ──
-st.set_page_config(page_title="AI File Analyzer (mini-copilot)", page_icon="🤖")
+st.set_page_config(page_title="AI File Analyzer (Gemini)", page_icon="🤖")
 st.sidebar.title("⚙️ Options")
 if st.sidebar.button("🆕 New Chat"):
     st.session_state.clear()
