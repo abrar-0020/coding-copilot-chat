@@ -6,16 +6,20 @@ from PIL import Image
 import io
 import pytesseract
 from pdf2image import convert_from_bytes
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
 
-# 🔹 Configure Gemini API
-API_KEY = "AIzaSyAG9aiAXuZ7ULYe3KeaMLvKXVrGyj3ji5A"
+# 🔹 Load environment variables
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
+
 genai.configure(api_key=API_KEY)
-MODEL_NAME = "gemini-1.5-flash"
 
 # ── Gemini Query Functions ──
 def query_gemini_text(prompt: str) -> str:
     try:
-        model = genai.GenerativeModel(MODEL_NAME)
+        model = genai.GenerativeModel("gemini-2.5-pro")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -23,7 +27,7 @@ def query_gemini_text(prompt: str) -> str:
 
 def query_gemini_image(image: Image.Image, prompt="Describe this image in detail.") -> str:
     try:
-        model = genai.GenerativeModel(MODEL_NAME)
+        model = genai.GenerativeModel("gemini-2.5-pro")
         response = model.generate_content([prompt, image])
         return response.text
     except Exception as e:
