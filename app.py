@@ -18,17 +18,16 @@ MODEL_NAME = "gemini-1.5-flash"
 def query_gemini_text(prompt: str) -> str:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
-        response = model.generate_content([prompt])
+        response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
         return f"❌ Gemini API Error: {e}"
 
 # ── Gemini Query (Image) ──
-def query_gemini_image(image_bytes: bytes) -> str:
+def query_gemini_image(pil_image: Image.Image) -> str:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
-        img = Image.open(io.BytesIO(image_bytes))
-        response = model.generate_content(["Describe this image in detail."], image=img)
+        response = model.generate_content([ "Describe this image in detail.", pil_image ])
         return response.text.strip()
     except Exception as e:
         return f"❌ Gemini Vision Error: {e}"
@@ -49,7 +48,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
             text = "⚠️ Could not extract text from PDF."
     return text[:4000] or "⚠️ No readable text found in PDF."
 
-# ── Detect Language ──
+# ── Detect Code Language ──
 def detect_language(filename: str) -> str:
     ext = filename.split(".")[-1]
     return {
@@ -75,6 +74,7 @@ if st.sidebar.button("🆕 New Chat"):
     st.session_state.messages.clear()
     st.session_state.file_processed = False
 
+# Show previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
@@ -90,14 +90,11 @@ if uploaded_file and not st.session_state.file_processed:
     with st.chat_message("user"):
         st.markdown(f"📄 Uploaded: **{uploaded_file.name}**")
 
-    # ✅ Code Files
+    # ✅ Source Code Files
     if file_name.endswith((".py", ".java", ".c", ".cpp", ".html", ".css", ".js")):
         file_content = file_bytes.decode("utf-8", errors="ignore")[:4000]
         lang = detect_language(file_name)
-        if lang:
-            st.code(file_content, language=lang)
-        else:
-            st.text_area("📄 Source Code", file_content, height=200)
+        st.code(file_content, language=lang)
         reply = query_gemini_text(f"Explain this {lang} code:\n```{lang}\n{file_content}\n```")
 
     # ✅ PDF Files
@@ -106,10 +103,14 @@ if uploaded_file and not st.session_state.file_processed:
         st.text_area("📄 Extracted PDF Text", pdf_text, height=200)
         reply = query_gemini_text(f"Summarize and explain this PDF content:\n{pdf_text}")
 
-    # ✅ Images
+    # ✅ Image Files
     elif file_name.endswith((".png", ".jpg", ".jpeg", ".webp")):
-        st.image(file_bytes, caption="📸 Uploaded Image", use_column_width=True)
-        reply = query_gemini_image(file_bytes)
+        try:
+            img = Image.open(io.BytesIO(file_bytes))
+            st.image(img, caption="📸 Uploaded Image", use_column_width=True)
+            reply = query_gemini_image(img)
+        except Exception as e:
+            reply = f"❌ Could not process image: {e}"
 
     # ✅ Other Files
     else:
@@ -117,13 +118,14 @@ if uploaded_file and not st.session_state.file_processed:
         file_preview = file_bytes[:2000].decode("utf-8", errors="ignore")
         reply = query_gemini_text(f"Analyze and explain this file content:\n{file_preview}")
 
+    # Display AI response
     st.session_state.messages.append({"role": "assistant", "content": reply})
     with st.chat_message("assistant"):
         st.markdown(reply)
 
     st.session_state.file_processed = True
 
-# ── Chat Input ──
+# ── Chat Box ──
 user_input = st.chat_input("Ask something about your file or code...")
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
