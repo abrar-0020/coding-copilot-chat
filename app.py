@@ -3,7 +3,7 @@ import requests
 
 # ── Local Ollama API Endpoint ──
 OLLAMA_API = "http://localhost:11434/api/generate"
-MODEL_NAME = "mistral"  # change to "llama3" or other model you installed
+MODEL_NAME = "mistral"  # change to "llama3" or another installed model
 
 # ── Query Ollama Locally ──
 def query_ollama(prompt: str) -> str:
@@ -19,6 +19,12 @@ def query_ollama(prompt: str) -> str:
 # ── Streamlit UI ──
 st.set_page_config(page_title="Local Coding Copilot", page_icon="🤖")
 
+# ── Sidebar ──
+st.sidebar.title("⚙️ Options")
+if st.sidebar.button("🆕 New Chat"):
+    st.session_state.messages = []
+
+# ── Chat History ──
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
