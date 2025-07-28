@@ -150,8 +150,13 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    with st.spinner("💭 Thinking..."):
-        reply = query_gemini_text(user_input)
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    # 🔹 Placeholder instead of spinner
     with st.chat_message("assistant"):
-        st.markdown(reply)
+        placeholder = st.empty()
+        placeholder.markdown("💭 Thinking...")
+
+        reply = query_gemini_text(user_input)  # Gemini response
+        placeholder.markdown(reply)
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+
