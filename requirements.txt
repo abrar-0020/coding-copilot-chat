@@ -4,5 +4,8 @@ python-dotenv
 google-generativeai
 pdfplumber
 Pillow
+pytesseract
+pdf2image
+poppler-utils   # (Linux)
 
 

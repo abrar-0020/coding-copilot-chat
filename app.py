@@ -4,13 +4,15 @@ import pdfplumber
 import mimetypes
 from PIL import Image
 import io
+import pytesseract
+from pdf2image import convert_from_bytes
 
 # 🔹 Configure Gemini API
 API_KEY = "AIzaSyAG9aiAXuZ7ULYe3KeaMLvKXVrGyj3ji5A"
 genai.configure(api_key=API_KEY)
 MODEL_NAME = "gemini-1.5-flash"
 
-# ── Query Gemini for Text ──
+# ── Gemini Query Functions ──
 def query_gemini_text(prompt: str) -> str:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
@@ -19,7 +21,6 @@ def query_gemini_text(prompt: str) -> str:
     except Exception as e:
         return f"❌ Gemini API Error: {e}"
 
-# ── Query Gemini for Image ──
 def query_gemini_image(image: Image.Image, prompt="Describe this image in detail.") -> str:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
@@ -28,7 +29,7 @@ def query_gemini_image(image: Image.Image, prompt="Describe this image in detail
     except Exception as e:
         return f"❌ Gemini Image Analysis Error: {e}"
 
-# ── Extract Text from PDF ──
+# ── Extract Text from PDF (Normal) ──
 def extract_text_from_pdf(file_bytes):
     text = ""
     try:
@@ -41,9 +42,19 @@ def extract_text_from_pdf(file_bytes):
         return ""
     return text
 
+# ── Extract Text from PDF using OCR (for scanned PDFs) ──
+def extract_text_with_ocr(file_bytes):
+    text = ""
+    try:
+        images = convert_from_bytes(file_bytes)
+        for img in images:
+            text += pytesseract.image_to_string(img) + "\n"
+    except Exception as e:
+        return f"❌ OCR failed: {e}"
+    return text
+
 # ── Streamlit Setup ──
 st.set_page_config(page_title="AI File Analyzer (Gemini)", page_icon="🤖")
-
 st.sidebar.title("⚙️ Options")
 if st.sidebar.button("🆕 New Chat"):
     st.session_state.clear()
@@ -83,15 +94,18 @@ if uploaded_file and not st.session_state.file_processed:
     # ✅ Handle PDFs
     elif file_type == "application/pdf":
         pdf_text = extract_text_from_pdf(file_bytes)
+
+        # If no extractable text, use OCR
         if not pdf_text.strip():
-            pdf_text = "❌ This PDF has no extractable text (might be scanned). OCR is required."
-        
+            with st.spinner("📷 PDF has no text. Running OCR..."):
+                pdf_text = extract_text_with_ocr(file_bytes)
+
+        if not pdf_text.strip() or pdf_text.startswith("❌"):
+            pdf_text = "❌ Could not extract text from this PDF (may require better OCR)."
+
         with st.chat_message("user"):
             st.markdown(f"📄 **Uploaded PDF:** {uploaded_file.name}")
-            if pdf_text.startswith("❌"):
-                st.warning(pdf_text)
-            else:
-                st.code(pdf_text[:800] + "..." if len(pdf_text) > 800 else pdf_text)
+            st.code(pdf_text[:800] + "..." if len(pdf_text) > 800 else pdf_text)
 
         st.session_state.messages.append({"role": "user", "content": f"📄 Uploaded PDF: {uploaded_file.name}"})
 
