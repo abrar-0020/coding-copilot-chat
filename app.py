@@ -6,7 +6,7 @@ from PIL import Image
 import io
 
 # 🔹 Configure Gemini API
-API_KEY = "your_gemini_api_key_here"
+API_KEY = "AIzaSyAG9aiAXuZ7ULYe3KeaMLvKXVrGyj3ji5A"
 genai.configure(api_key=API_KEY)
 MODEL_NAME = "gemini-1.5-flash"
 
