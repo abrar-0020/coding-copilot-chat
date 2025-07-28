@@ -16,22 +16,22 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 
 genai.configure(api_key=API_KEY)
 
-# ── Gemini Query Functions ──
+# ──(mini-copilot Query Functions ──
 def query_gemini_text(prompt: str) -> str:
     try:
-        model = genai.GenerativeModel("gemini-2.5-pro")
+        model = genai.GenerativeModel("mini-copilot")
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"❌ Gemini API Error: {e}"
+        return f"❌(mini-copilot API Error: {e}"
 
 def query_gemini_image(image: Image.Image, prompt="Describe this image in detail.") -> str:
     try:
-        model = genai.GenerativeModel("gemini-2.5-pro")
+        model = genai.GenerativeModel("mini-copilot")
         response = model.generate_content([prompt, image])
         return response.text
     except Exception as e:
-        return f"❌ Gemini Image Analysis Error: {e}"
+        return f"❌(mini-copilot Image Analysis Error: {e}"
 
 # ── Extract Text from PDF (Normal) ──
 def extract_text_from_pdf(file_bytes):
@@ -58,7 +58,7 @@ def extract_text_with_ocr(file_bytes):
     return text
 
 # ── Streamlit Setup ──
-st.set_page_config(page_title="AI File Analyzer (Gemini)", page_icon="🤖")
+st.set_page_config(page_title="AI File Analyzer (mini-copilot)", page_icon="🤖")
 st.sidebar.title("⚙️ Options")
 if st.sidebar.button("🆕 New Chat"):
     st.session_state.clear()
@@ -89,7 +89,7 @@ if uploaded_file and not st.session_state.file_processed:
         st.session_state.messages.append({"role": "user", "content": f"📷 Uploaded Image: {uploaded_file.name}"})
         image = Image.open(io.BytesIO(file_bytes))
 
-        with st.spinner("💭 Analyzing image with Gemini..."):
+        with st.spinner("💭 Analyzing image please wait..."):
             reply = query_gemini_image(image, "Describe and analyze this image.")
         st.session_state.messages.append({"role": "assistant", "content": reply})
         with st.chat_message("assistant"):
@@ -114,7 +114,7 @@ if uploaded_file and not st.session_state.file_processed:
         st.session_state.messages.append({"role": "user", "content": f"📄 Uploaded PDF: {uploaded_file.name}"})
 
         if not pdf_text.startswith("❌"):
-            with st.spinner("💭 Analyzing PDF with Gemini..."):
+            with st.spinner("💭 Analyzing PDF please wait..."):
                 reply = query_gemini_text(f"Explain this PDF content:\n{pdf_text[:4000]}")
             st.session_state.messages.append({"role": "assistant", "content": reply})
             with st.chat_message("assistant"):
@@ -128,7 +128,7 @@ if uploaded_file and not st.session_state.file_processed:
             st.code(text[:800] + "..." if len(text) > 800 else text, language="python" if uploaded_file.name.endswith(".py") else None)
         st.session_state.messages.append({"role": "user", "content": f"📄 Uploaded File: {uploaded_file.name}"})
 
-        with st.spinner("💭 Analyzing file content with Gemini..."):
+        with st.spinner("💭 Analyzing file content please wait..."):
             reply = query_gemini_text(f"Explain this file content:\n{text[:4000]}")
         st.session_state.messages.append({"role": "assistant", "content": reply})
         with st.chat_message("assistant"):
