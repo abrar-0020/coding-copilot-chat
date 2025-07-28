@@ -10,9 +10,8 @@ API_KEY = "AIzaSyAG9aiAXuZ7ULYe3KeaMLvKXVrGyj3ji5A"
 genai.configure(api_key=API_KEY)
 MODEL_NAME = "gemini-1.5-flash"
 
-# ── Gemini Query Functions ──
+# ── Query Gemini for Text ──
 def query_gemini_text(prompt: str) -> str:
-    """Send plain text to Gemini."""
     try:
         model = genai.GenerativeModel(MODEL_NAME)
         response = model.generate_content(prompt)
@@ -20,24 +19,26 @@ def query_gemini_text(prompt: str) -> str:
     except Exception as e:
         return f"❌ Gemini API Error: {e}"
 
-def query_gemini_image(image_bytes, prompt="Describe this image.") -> str:
-    """Send an image with an optional prompt to Gemini."""
+# ── Query Gemini for Image ──
+def query_gemini_image(image: Image.Image, prompt="Describe this image in detail.") -> str:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
-        image = Image.open(io.BytesIO(image_bytes))
         response = model.generate_content([prompt, image])
         return response.text
     except Exception as e:
         return f"❌ Gemini Image Analysis Error: {e}"
 
-# ── PDF Text Extraction ──
+# ── Extract Text from PDF ──
 def extract_text_from_pdf(file_bytes):
     text = ""
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
+    try:
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+    except Exception:
+        return ""
     return text
 
 # ── Streamlit Setup ──
@@ -58,63 +59,67 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # ── File Upload ──
-uploaded_file = st.file_uploader("Upload any file (text, Python, PDF, image)...", type=None)
+uploaded_file = st.file_uploader("Upload any file (Python, PDF, Image, Text)...", type=None)
 
 if uploaded_file and not st.session_state.file_processed:
     file_type, _ = mimetypes.guess_type(uploaded_file.name)
     file_bytes = uploaded_file.read()
 
-    # ✅ Images
+    # ✅ Handle Images
     if file_type and file_type.startswith("image"):
         with st.chat_message("user"):
             st.markdown(f"📷 **Uploaded Image:** {uploaded_file.name}")
             st.image(file_bytes)
+
         st.session_state.messages.append({"role": "user", "content": f"📷 Uploaded Image: {uploaded_file.name}"})
+        image = Image.open(io.BytesIO(file_bytes))
 
         with st.spinner("💭 Analyzing image with Gemini..."):
-            reply = query_gemini_image(file_bytes, "Explain this image.")
+            reply = query_gemini_image(image, "Describe and analyze this image.")
         st.session_state.messages.append({"role": "assistant", "content": reply})
         with st.chat_message("assistant"):
             st.markdown(reply)
 
-    # ✅ PDFs
+    # ✅ Handle PDFs
     elif file_type == "application/pdf":
-        text = extract_text_from_pdf(file_bytes)
-        if not text:
-            text = "No extractable text found in this PDF."
+        pdf_text = extract_text_from_pdf(file_bytes)
+        if not pdf_text.strip():
+            pdf_text = "❌ This PDF has no extractable text (might be scanned). OCR is required."
+        
         with st.chat_message("user"):
             st.markdown(f"📄 **Uploaded PDF:** {uploaded_file.name}")
-            st.code(text[:800] + "..." if len(text) > 800 else text)
+            if pdf_text.startswith("❌"):
+                st.warning(pdf_text)
+            else:
+                st.code(pdf_text[:800] + "..." if len(pdf_text) > 800 else pdf_text)
+
         st.session_state.messages.append({"role": "user", "content": f"📄 Uploaded PDF: {uploaded_file.name}"})
 
-        with st.spinner("💭 Analyzing PDF content..."):
-            reply = query_gemini_text(f"Explain this document:\n{text[:4000]}")
-        st.session_state.messages.append({"role": "assistant", "content": reply})
-        with st.chat_message("assistant"):
-            st.markdown(reply)
+        if not pdf_text.startswith("❌"):
+            with st.spinner("💭 Analyzing PDF with Gemini..."):
+                reply = query_gemini_text(f"Explain this PDF content:\n{pdf_text[:4000]}")
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            with st.chat_message("assistant"):
+                st.markdown(reply)
 
-    # ✅ Text & Code Files (.py, .txt, .json, etc.)
+    # ✅ Handle Python/Text Files
     elif file_type and ("text" in file_type or uploaded_file.name.endswith((".py", ".txt", ".json", ".csv", ".md"))):
-        try:
-            text = file_bytes.decode("utf-8", errors="ignore")
-        except:
-            text = str(file_bytes)
-
+        text = file_bytes.decode("utf-8", errors="ignore")
         with st.chat_message("user"):
             st.markdown(f"📄 **Uploaded File:** {uploaded_file.name}")
             st.code(text[:800] + "..." if len(text) > 800 else text, language="python" if uploaded_file.name.endswith(".py") else None)
         st.session_state.messages.append({"role": "user", "content": f"📄 Uploaded File: {uploaded_file.name}"})
 
-        with st.spinner("💭 Analyzing file content..."):
+        with st.spinner("💭 Analyzing file content with Gemini..."):
             reply = query_gemini_text(f"Explain this file content:\n{text[:4000]}")
         st.session_state.messages.append({"role": "assistant", "content": reply})
         with st.chat_message("assistant"):
             st.markdown(reply)
 
-    # ❌ Unsupported files
+    # ❌ Unsupported Files
     else:
         with st.chat_message("assistant"):
-            st.warning("❌ This file type is not supported yet. Try uploading a text, code, PDF, or image.")
+            st.warning("❌ This file type is not supported yet. Try uploading Python, text, PDF, or image.")
         st.session_state.messages.append({"role": "assistant", "content": "❌ Unsupported file type."})
 
     st.session_state.file_processed = True
