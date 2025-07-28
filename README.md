@@ -1,78 +1,110 @@
-# 🤖 Mini Copilot – AI Coding Copilot by Abrar Pasha
+# 🤖 Mini Copilot – AI File Analyzer (Gemini Powered)
 
-**Mini Copilot** is a modern, interactive coding assistant built with **Streamlit** and **Together.ai (Mistral-7B)**. Ask coding questions or upload `.py` files to get plain-English explanations, bug fixes, or improvements — all via a sleek chat interface.
+### 📌 **Overview**
+**Mini Copilot** is an **AI-powered coding assistant** built with **Streamlit** and **Google Gemini API**.  
+It allows users to upload **any file (Python, text, images, PDFs, etc.)** and interact with it intelligently.  
+You can ask it questions, get explanations, and analyze files with ease.
 
----
-
-**## 🚀 Features**
-
-- 💬 Chat with an AI coding assistant (powered by Mistral-7B)
-- 📂 Upload `.py` files to get full-code breakdowns
-- 🧠 Maintains conversation within session (stateless across reloads)
-- 🎓 Built for students, educators, and beginner-to-intermediate devs
-- ⚡ Hosted online — no install required
+🌐 **Live Demo:**  
+👉 [https://mini-copilot.streamlit.app/](https://mini-copilot.streamlit.app/)
 
 ---
 
-**## 🌐 Try the Live App**
-
-▶️ [https://mini-copilot.streamlit.app/](https://mini-copilot.streamlit.app/)
-
----
-
-** 🛠 Tech Stack**
-
-- Python 3.x
-- Streamlit
-- Together.ai API (Mistral-7B-Instruct)
-- RESTful HTTP
+## 🚀 **Features**
+- 🧠 **AI-Powered by Gemini** – Understands and explains content smartly.  
+- 📂 **Multi-File Support** – Supports `.py`, `.txt`, `.pdf`, `.jpg`, `.png`, and more.  
+- 🔍 **OCR for Scanned PDFs** – Extracts text using Tesseract.  
+- ⚡ **Fast & Simple** – Minimal UI with quick responses.  
+- 🔒 **Secure** – Uses `.env` for API key protection.  
 
 ---
 
-**## 💻 How to Run Locally
+## 🛠 **Tech Stack**
+- **Framework:** Streamlit  
+- **AI Model:** Google Gemini  
+- **OCR:** Tesseract + pdf2image  
+- **PDF Parsing:** pdfplumber  
+- **Image Processing:** Pillow  
 
-# 1. Install dependencies
+---
+
+## 📦 **Installation**
+
+``bash
+# 1. Clone the repository
+git clone https://github.com/abrar-0020/coding-copilot-chat.git
+cd coding-copilot-chat
+
+# 2. Create a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 2. Run the Streamlit app
+# 4. Add your Gemini API key to .env
+echo "GEMINI_API_KEY=your_key_here" > .env
+
+# 5. Run the app
 streamlit run app.py
+``
 
 ---
 
-**📂 Files Included**
-
--> app.py – Full Streamlit app with chat + file upload logic
--> requirements.txt – Python packages needed to run
--> README.md – Project overview and usage
-
----
-
-**🔐 API Key Setup**
-For local or cloud deployment, avoid hardcoding API keys:
-
-import os
-API_KEY = os.getenv("TOGETHER_API_KEY")
-
-**Set your API key securely via:**
-.env file (locally with python-dotenv)
-Secrets Manager in Streamlit Cloud
+## 📄 **Usage**
+1. Upload a file (Python, image, PDF, etc.).  
+2. Mini Copilot analyzes and explains it.  
+3. Ask follow-up questions in the chat.  
 
 ---
 
-**🙋 Author**
-Abrar Pasha
+## ✅ **Requirements**
+``
+streamlit
+google-generativeai
+pdfplumber
+pillow
+pytesseract
+pdf2image
+python-dotenv
+``
+Also install:
+- **Tesseract OCR** ([Guide](https://github.com/UB-Mannheim/tesseract/wiki))  
+- **Poppler** (for pdf2image)
+
 ---
 
-**📌 Note**
-This tool is designed for educational and productivity use — not for generating full applications or advanced debugging. For large-scale use, consider integrating with stronger hosting or GPT-based APIs.
+## 🧑‍💻 **Example Usage**
+- Upload a **Python script** → get a human-readable explanation.  
+- Upload an **image** → AI describes and interprets it.  
+- Upload a **scanned PDF** → OCR extracts text → AI explains it.  
 
 ---
 
-## ©️ License
+## ✅ **Project Structure**
+``
+📂 coding-copilot-chat
+ ├── app.py              # Main Streamlit App
+ ├── requirements.txt    # Dependencies
+ ├── .env                # API Key (ignored in Git)
+ └── README.md           # Documentation
+``
 
+---
+
+## 📝 **Future Enhancements**
+- [ ] Support for audio and video files.  
+- [ ] Multi-page PDF summaries with chunking.  
+- [ ] Real-time streaming responses.
+
+---
+
+## 📜 **License & Copyright**
+``
 © 2025 Abrar. All rights reserved.
 
-This project is open for personal and educational use.  
-Do not resell or host as a commercial service without permission.
-
-
+This project is protected by copyright law.  
+You may use and modify it for personal and educational purposes.  
+Commercial use requires prior written permission from the author.
+```
