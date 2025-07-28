@@ -12,18 +12,28 @@ from dotenv import load_dotenv
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-MODEL_NAME = "gemini-1.5-flash"  # ✅ Fast model
+MODEL_NAME = "gemini-1.5-flash"
 
-# ── Gemini Query ──
+# ── Gemini Query (Text) ──
 def query_gemini_text(prompt: str) -> str:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
-        response = model.generate_content(prompt)
+        response = model.generate_content([prompt])
         return response.text.strip()
     except Exception as e:
         return f"❌ Gemini API Error: {e}"
 
-# ── Extract Text from PDF ──
+# ── Gemini Query (Image) ──
+def query_gemini_image(image_bytes: bytes) -> str:
+    try:
+        model = genai.GenerativeModel(MODEL_NAME)
+        img = Image.open(io.BytesIO(image_bytes))
+        response = model.generate_content(["Describe this image in detail."], image=img)
+        return response.text.strip()
+    except Exception as e:
+        return f"❌ Gemini Vision Error: {e}"
+
+# ── Extract PDF Text ──
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     text = ""
     try:
@@ -36,10 +46,10 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
             for img in images[:3]:
                 text += pytesseract.image_to_string(img)
         except:
-            text = "⚠️ Could not extract text from this PDF."
+            text = "⚠️ Could not extract text from PDF."
     return text[:4000] or "⚠️ No readable text found in PDF."
 
-# ── Detect Code Language from Extension ──
+# ── Detect Language ──
 def detect_language(filename: str) -> str:
     ext = filename.split(".")[-1]
     return {
@@ -52,22 +62,19 @@ def detect_language(filename: str) -> str:
         "js": "javascript"
     }.get(ext, "")
 
-# ── Streamlit Config ──
+# ── Streamlit UI ──
 st.set_page_config(page_title="Mini Copilot", page_icon="🤖")
 st.title("🤖 Mini Copilot – AI File & Code Assistant")
 
-# Session State
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "file_processed" not in st.session_state:
     st.session_state.file_processed = False
 
-# Sidebar
 if st.sidebar.button("🆕 New Chat"):
     st.session_state.messages.clear()
     st.session_state.file_processed = False
 
-# Show previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
@@ -79,51 +86,44 @@ if uploaded_file and not st.session_state.file_processed:
     file_name = uploaded_file.name.lower()
     reply = ""
 
-    # Display uploaded file message
     st.session_state.messages.append({"role": "user", "content": f"📄 Uploaded: {uploaded_file.name}"})
     with st.chat_message("user"):
         st.markdown(f"📄 Uploaded: **{uploaded_file.name}**")
 
-    # ✅ Handle Source Code Files (py, java, c, cpp, html, css, js)
+    # ✅ Code Files
     if file_name.endswith((".py", ".java", ".c", ".cpp", ".html", ".css", ".js")):
-        try:
-            file_content = file_bytes.decode("utf-8", errors="ignore")[:4000]
-            lang = detect_language(file_name)
-            if lang:
-                st.code(file_content, language=lang)
-            else:
-                st.text_area("📄 Source Code", file_content, height=200)
-            prompt = f"Explain this {lang.upper() if lang else 'source code'} in simple terms:\n```{lang}\n{file_content}\n```"
-            reply = query_gemini_text(prompt)
-        except Exception as e:
-            reply = f"❌ Could not read this code file: {e}"
+        file_content = file_bytes.decode("utf-8", errors="ignore")[:4000]
+        lang = detect_language(file_name)
+        if lang:
+            st.code(file_content, language=lang)
+        else:
+            st.text_area("📄 Source Code", file_content, height=200)
+        reply = query_gemini_text(f"Explain this {lang} code:\n```{lang}\n{file_content}\n```")
 
-    # ✅ Handle PDF Files
+    # ✅ PDF Files
     elif file_name.endswith(".pdf"):
         pdf_text = extract_text_from_pdf(file_bytes)
         st.text_area("📄 Extracted PDF Text", pdf_text, height=200)
-        prompt = f"Summarize and explain this PDF:\n{pdf_text}"
-        reply = query_gemini_text(prompt)
+        reply = query_gemini_text(f"Summarize and explain this PDF content:\n{pdf_text}")
 
-    # ✅ Handle Images
+    # ✅ Images
+    elif file_name.endswith((".png", ".jpg", ".jpeg", ".webp")):
+        st.image(file_bytes, caption="📸 Uploaded Image", use_column_width=True)
+        reply = query_gemini_image(file_bytes)
+
+    # ✅ Other Files
     else:
-        try:
-            img = Image.open(io.BytesIO(file_bytes))
-            st.image(img, caption="📸 Uploaded Image", use_column_width=True)
-            model = genai.GenerativeModel(MODEL_NAME)
-            response = model.generate_content(["Describe this image in detail.", img])
-            reply = response.text.strip()
-        except:
-            reply = query_gemini_text("This is a binary file. Explain what it may contain.")
+        st.text("⚠️ Unsupported file type, sending raw content to Gemini...")
+        file_preview = file_bytes[:2000].decode("utf-8", errors="ignore")
+        reply = query_gemini_text(f"Analyze and explain this file content:\n{file_preview}")
 
-    # Show AI Reply
     st.session_state.messages.append({"role": "assistant", "content": reply})
     with st.chat_message("assistant"):
         st.markdown(reply)
 
     st.session_state.file_processed = True
 
-# ── User Prompt ──
+# ── Chat Input ──
 user_input = st.chat_input("Ask something about your file or code...")
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
