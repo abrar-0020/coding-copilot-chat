@@ -1,81 +1,57 @@
-import os
-from dotenv import load_dotenv
-
 import streamlit as st
 import requests
 
-# ── App Configuration ──
-st.set_page_config(page_title="Coding Copilot Chat", page_icon="🤖", layout="wide")
-load_dotenv()
-API_KEY = os.getenv("TOGETHER_API_KEY")
-API_URL    = "https://api.together.xyz/v1/chat/completions"
-MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.1"
+# ── Local Ollama API Endpoint ──
+OLLAMA_API = "http://localhost:11434/api/generate"
+MODEL_NAME = "mistral"  # change to "llama3" or other model you installed
 
-SYSTEM_PROMPT = (
-    "You are a helpful coding assistant. "
-    "Answer questions about code, explain snippets, fix bugs, and suggest improvements."
-)
+# ── Query Ollama Locally ──
+def query_ollama(prompt: str) -> str:
+    try:
+        payload = {"model": MODEL_NAME, "prompt": prompt}
+        response = requests.post(OLLAMA_API, json=payload, stream=False)
+        if response.status_code == 200:
+            return response.json().get("response", "⚠️ No response from Ollama.")
+        return f"❌ Error {response.status_code}: {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"❌ Cannot connect to Ollama: {e}"
 
-# ── Helper: send message to model and show reply ──
-def process_user_message(text: str) -> None:
-    st.session_state.messages.append({"role": "user", "content": text})
-    with st.chat_message("user", avatar="🧑"):
-        st.markdown(text)
+# ── Streamlit UI ──
+st.set_page_config(page_title="Local Coding Copilot", page_icon="🤖")
 
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type":  "application/json",
-    }
-    payload = {
-        "model":       MODEL_NAME,
-        "messages":    st.session_state.messages,
-        "temperature": 0.7,
-        "max_tokens":  512,
-    }
-    with st.spinner("Copilot is thinking…"):
-        r = requests.post(API_URL, headers=headers, json=payload)
-        reply = (
-            r.json()["choices"][0]["message"]["content"]
-            if r.status_code == 200
-            else f"❌ Error {r.status_code}: {r.text}"
-        )
-
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    with st.chat_message("assistant", avatar="🤖"):
-        st.markdown(reply)
-
-# ── Session State Initialization ──
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-if "last_file_name" not in st.session_state:
-    st.session_state.last_file_name = None
+    st.session_state.messages = []
 
-# ── Sidebar: New Chat only (no history) ──
-with st.sidebar:
-    st.markdown("## 💬 Chat Menu")
-    if st.button("🆕 New Chat"):
-        st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        st.session_state.last_file_name = None
-        st.success("Started a new chat!")
-    st.markdown("---")
+# Display previous chat messages
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-# ── Display current conversation ──
-for m in st.session_state.messages[1:]:  # skip system prompt
-    avatar = "🤖" if m["role"] == "assistant" else "🧑"
-    with st.chat_message(m["role"], avatar=avatar):
-        st.markdown(m["content"])
+# ── Chat Input at Bottom ──
+user_input = st.chat_input("Ask something about your code...")
 
-# ── Chat Input & File Upload ──
-user_text = st.chat_input("Type your code question or paste code…")
-
+# ── File Upload (.py files) ──
 uploaded_file = st.file_uploader("", type="py", label_visibility="collapsed")
 if uploaded_file:
-    if st.session_state.last_file_name != uploaded_file.name:
-        code = uploaded_file.read().decode("utf-8", errors="ignore")
-        st.toast("✅ File uploaded. Generating explanation…")
-        prompt = f"Explain this Python code:\n```python\n{code}\n```"
-        process_user_message(prompt)
-        st.session_state.last_file_name = uploaded_file.name
+    code = uploaded_file.read().decode("utf-8", errors="ignore")
+    st.toast("✅ File uploaded. Generating explanation...")
+    file_prompt = f"Explain this Python code:\n```python\n{code}\n```"
+    st.session_state.messages.append({"role": "user", "content": "Uploaded a Python file"})
+    with st.chat_message("user"):
+        st.markdown("📄 Uploaded a Python file")
+    with st.spinner("💭 Thinking..."):
+        reply = query_ollama(file_prompt)
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+    with st.chat_message("assistant"):
+        st.markdown(reply)
 
-if user_text:
-    process_user_message(user_text)
+# ── Process User Input ──
+if user_input:
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+    with st.spinner("💭 Thinking..."):
+        reply = query_ollama(user_input)
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+    with st.chat_message("assistant"):
+        st.markdown(reply)
